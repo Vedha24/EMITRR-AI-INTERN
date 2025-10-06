@@ -16,16 +16,13 @@ End-to-end Jupyter notebook for extracting medical entities, summarizing dialogu
 ## Repository Structure
 
 .
-├─ EMITRR_AIINTERN_VEDHAM.ipynb # Main notebook (end-to-end workflow & demo)
-
-yaml
-Copy code
+├─ EMITRR_AIINTERN_VEDHAM.ipynb
 
 ---
 
 ## Quickstart
 
-1. **Create & activate a virtual environment** (optional but recommended):
+1. **Create & activate a virtual environment** :
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
@@ -46,7 +43,6 @@ Copy code
 python3 -m pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.3/en_core_sci_sm-0.5.3.tar.gz
 
 python3 -m pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.3/en_ner_bc5cdr_md-0.5.3.tar.gz
-Tip: You can add these dependencies to a requirements.txt later. Keep spaCy pinned to 3.6.1 because SciSpaCy v0.5.3 models require <3.7.0.
 
 Run the notebook:
 
