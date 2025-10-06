@@ -1,95 +1,100 @@
-# EMITRR – AI Medical Interview Transcription & Reporting
+# EMITR – AI Medical Interview Transcription & Reporting
 
-End-to-end Jupyter notebook for extracting medical entities, summarizing dialogue, analyzing sentiment/intent, and generating a clinical-style SOAP note from physician–patient conversations.
+A Jupyter notebook (`emitr.ipynb`) that processes physician–patient dialogues to:
 
----
-
-## Features
-
-- **Medical NER** with SciSpaCy + BC5CDR (`MedicalNER`)  
-- **Summarization** into a structured JSON summary (`MedicalSummarizer`)  
-- **Per-utterance sentiment & intent** analysis (`MedicalSentimentAnalyzer`)  
-- **SOAP note generation** (`SOAPNoteGenerator`) – Subjective, Objective, Assessment, Plan  
+- Extract medical entities with SciSpaCy/BC5CDR (`MedicalNER`).
+- Summarize findings into a structured JSON summary (`MedicalSummarizer`).
+- Analyze statement-level sentiment and intent (`MedicalSentimentAnalyzer`).
+- Generate a clinical-style SOAP note (`SOAPNoteGenerator`).
 
 ---
 
-## Repository Structure
+## Contents
 
-.
-├─ EMITRR_AIINTERN_VEDHAM.ipynb
+- `EMITRR_AIINTERN_VEDHAM.ipynb` – end-to-end workflow with modular classes and demo output.
 
+Key classes defined in the notebook:
+- `MedicalNER` – aggregates symptoms, diagnoses, treatments, medications, body parts, temporal, severity, etc.
+- `MedicalSentimentAnalyzer` – TextBlob fallback and optional BERT pipeline mapping to 5-point sentiment; basic intent heuristics.
+- `SOAPNoteGenerator` – produces a structured SOAP JSON using dialogue, entities, summaries, and sentiments.
 ---
 
-## Quickstart
+## Setup
 
-1. **Create & activate a virtual environment** :
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-Upgrade basics:
+Tested with Python 3.11 on macOS.
 
-bash
-Copy code
+### 1) Base packages
+
+```bash
 python3 -m pip install --upgrade pip setuptools wheel
-Install core dependencies:
+python3 -m pip install \
+  spacy==3.6.1 \
+  scispacy==0.5.5 \
+  medspacy \
+  transformers \
+  torch \
+  datasets \
+  textblob \
+  pandas \
+  numpy
+```
 
-bash
-Copy code
-python3 -m pip install spacy==3.6.1 scispacy==0.5.5 medspacy transformers torch datasets textblob pandas numpy
-Install SciSpaCy models (requires spaCy >=3.6.1,<3.7.0):
+Why spaCy 3.6.1? The SciSpaCy models used here require spaCy <3.7.0 and are compatible with 3.6.1. Mixing newer spaCy with older models triggers resolver warnings/conflicts.
 
-bash
-Copy code
-python3 -m pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.3/en_core_sci_sm-0.5.3.tar.gz
+### 2) SciSpaCy/BC5CDR models
 
-python3 -m pip install https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.3/en_ner_bc5cdr_md-0.5.3.tar.gz
+Install the small SciSpaCy core model and the BC5CDR NER model used in the notebook:
 
-Run the notebook:
+```bash
+# SciSpaCy small model
+ython3 -m pip install \
+  https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.3/en_core_sci_sm-0.5.3.tar.gz
 
-bash
-Copy code
-jupyter notebook EMITRR_AIINTERN_VEDHAM.ipynb
-Then run all cells in order.
+# BC5CDR disease/chemical NER model
+python3 -m pip install \
+  https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.3/en_ner_bc5cdr_md-0.5.3.tar.gz
+```
 
-Notebook Workflow
-Loads en_core_sci_sm and en_ner_bc5cdr_md (falls back gracefully if missing).
+Notes:
+- `en_core_sci_sm 0.5.3` requires `spacy>=3.6.1,<3.7.0`.
+- `en_ner_bc5cdr_md 0.5.3` requires `spacy>=3.6.1,<3.7.0`.
+- If either model is missing, the notebook falls back to `en_core_web_sm` or skips BC5CDR gracefully.
 
-Parses example physician–patient dialogues.
+### 3) Optional models
 
-Extracts entities and builds a structured summary (JSON).
+If you want BERT-based sentiment via `transformers`, the default pipeline will be downloaded the first time you run it (internet required). If unavailable, the notebook uses TextBlob.
 
-Performs statement-level sentiment & intent analysis.
+---
 
-Generates a SOAP-style note (JSON) with metadata + S/O/A/P sections.
+## Running the Notebook
 
-Expected Output (Example)
-json
-Copy code
-{
-  "soap_note": {
-    "Subjective": "...",
-    "Objective": "...",
-    "Assessment": ["..."],
-    "Plan": ["..."]
-  },
-  "entities": {
-    "DIAGNOSES": [...],
-    "SYMPTOMS": [...],
-    "TREATMENTS": [...]
-  },
-  "sentiment_summary": {
-    "overall": "neutral",
-    "per_statement": [...]
-  }
-}
-Troubleshooting
-spaCy version conflict
-If you see: requires spacy<3.7.0,>=3.6.1
+1. Launch Jupyter and open the notebook:
+   ```bash
+   jupyter notebook EMITRR_AIINTERN_VEDHAM.ipynb
+   ```
+2. Run all cells in order. The notebook:
+   - Loads models (`spacy.load('en_core_sci_sm')`, `spacy.load('en_ner_bc5cdr_md')`, `medspacy.load()`).
+   - Parses example physician/patient dialogue (`dialogue_data`).
+   - Extracts entities and builds a structured medical summary (JSON).
+   - Performs sentiment/intent analysis for each statement.
+   - Generates and prints a SOAP note with metadata, Subjective, Objective, Assessment, and Plan sections.
 
-bash
-Copy code
-python3 -m pip install --force-reinstall "spacy==3.6.1"
-Model load failures (spacy.load('en_core_sci_sm') or en_ner_bc5cdr_md)
-Re-install from the URLs above. The notebook will fall back gracefully, but results may be reduced.
+Expected outputs include sections like:
+- “Medical Entities Extracted” with categories (DIAGNOSES, SYMPTOMS, TREATMENTS, BODY_PARTS, TEMPORAL, SEVERITY).
+- “SENTIMENT ANALYSIS RESULTS” with statement-level scores and an overall summary.
+- “SOAP NOTE GENERATED” showing a structured JSON note.
 
-Apple Silicon (M-series) + PyTorch
+---
+
+## Troubleshooting
+
+- SpaCy version conflicts: If you see messages like “requires spacy<3.7.0,>=3.6.1”, make sure you’re on spaCy 3.6.1 before installing the models. You can force it with:
+  ```bash
+  python3 -m pip install --force-reinstall "spacy==3.6.1"
+  ```
+- Missing models: If `spacy.load('en_core_sci_sm')` or `spacy.load('en_ner_bc5cdr_md')` fails, install from the URLs above. The notebook will fallback when possible but results may be reduced.
+- Apple Silicon (M-series) and PyTorch: The generic `torch` wheel should work; for best performance, consult the PyTorch site for MPS-accelerated builds.
+
+---
+
+
